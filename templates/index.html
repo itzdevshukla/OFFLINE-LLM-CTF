@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SecureAI-9 Boot Terminal</title>
+
+<style>
+/* ======= GLOBAL ======= */
+body {
+    background: #020208;
+    color: #00f6ff;
+    font-family: monospace;
+    margin: 0;
+    overflow: hidden;       /* Prevent page scroll (fixes zoom/shift) */
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* ======= MAIN WRAPPER (FIXED CENTERED, STATIC SIZE) ======= */
+#main {
+    width: 900px;
+    max-width: 900px;
+    height: 650px;
+    max-height: 650px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+/* ======= TERMINAL SCREEN (STATIC HEIGHT, CUSTOM SCROLLBAR) ======= */
+#screen {
+    height: 500px;
+    padding: 20px;
+    background: rgba(0, 20, 30, 0.7);
+    border: 1px solid #00ffff55;
+    box-shadow: 0 0 25px #00ffee44;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+/* ======= CYBERPUNK SCROLLBAR ======= */
+#screen::-webkit-scrollbar {
+    width: 10px;
+}
+#screen::-webkit-scrollbar-track {
+    background: rgba(0, 40, 50, 0.4);
+    border-radius: 10px;
+}
+#screen::-webkit-scrollbar-thumb {
+    background: cyan;
+    border-radius: 10px;
+    box-shadow: 0 0 10px cyan;
+}
+#screen::-webkit-scrollbar-thumb:hover {
+    background: #00ffff;
+}
+
+/* cursor blink */
+.cursor {
+    animation: blink 0.8s infinite;
+}
+@keyframes blink {
+    0%,100% {opacity:1;}
+    50% {opacity:0;}
+}
+
+/* ======= INPUT FIELD ======= */
+#inputRow {
+    display: none;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+#user_input {
+    width: 70%;
+    padding: 10px;
+    background: rgba(0,40,50,0.9);
+    border: 1px solid cyan;
+    color: cyan;
+    font-size: 16px;
+    border-radius: 6px;
+}
+
+#send_btn {
+    padding: 10px 20px;
+    background: cyan;
+    border: none;
+    border-radius: 6px;
+    color: black;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+#send_btn:hover {
+    background: #00ffff;
+    box-shadow: 0 0 12px cyan;
+}
+
+/* ASCII glow */
+.ascii {
+    text-align: center;
+    display: block;
+    margin-bottom: 10px;
+    color: #00ffee;
+    text-shadow: 0 0 12px #00ffffaa;
+}
+
+/* ======= FLOATING GLOW ORBS IN BACKGROUND ======= */
+#bg-orbs {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    z-index: -1;  /* behind everything */
+}
+
+.orb {
+    position: absolute;
+    width: 120px;
+    height: 120px;
+    background: radial-gradient(circle, rgba(0,255,255,0.6), rgba(0,255,255,0));
+    border-radius: 50%;
+    filter: blur(6px);
+    animation: floatOrb 18s linear infinite;
+    opacity: 0.55;
+}
+
+/* Different sizes */
+.orb.small  { width: 70px; height: 70px; }
+.orb.big    { width: 180px; height: 180px; }
+
+/* Floating animation */
+@keyframes floatOrb {
+    0%   { transform: translateY(120vh) translateX(0); }
+    100% { transform: translateY(-20vh) translateX(40px); }
+}
+
+
+
+
+</style>
+
+</head>
+
+<body>
+
+
+    <div id="bg-orbs"></div>
+
+<div id="main">
+
+    <div id="screen"></div>
+
+    <div id="inputRow">
+        <input id="user_input" type="text" placeholder="Type your command…" autocomplete="off">
+        <button id="send_btn" onclick="sendMsg()">EXECUTE</button>
+    </div>
+
+</div>
+
+<script>
+/* ================= TERMINAL TYPING EFFECT ================= */
+function typeLine(text, speed=20) {
+    return new Promise(resolve => {
+        let box = document.getElementById("screen");
+        let i = 0;
+        function type() {
+            if (i < text.length) {
+                box.innerHTML += text.charAt(i);
+                i++;
+                setTimeout(type, speed);
+            } else {
+                box.innerHTML += "<br>";
+                box.scrollTop = box.scrollHeight;
+                resolve();
+            }
+        }
+        type();
+    });
+}
+
+/* ================= BOOT SEQUENCE ================= */
+async function bootSequence() {
+    const ascii = String.raw`
+███████╗███████╗ ██████╗██╗   ██╗██████╗ ███████╗██╗   ██╗███████╗
+██╔════╝██╔════╝██╔════╝╚██╗ ██╔╝██╔══██╗██╔════╝██║   ██║██╔════╝
+███████╗█████╗  ██║      ╚████╔╝ ██████╔╝█████╗  ██║   ██║███████╗
+╚════██║██╔══╝  ██║       ╚██╔╝  ██╔══██╗██╔══╝  ██║   ██║╚════██║
+███████║███████╗╚██████╗   ██║   ██║  ██║███████╗╚██████╔╝███████║
+╚══════╝╚══════╝ ╚═════╝   ╚═╝   ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚══════╝
+
+     SecureAI-9 :: Jailbreak Challenge     
+===========================================================
+`;
+
+    let box = document.getElementById("screen");
+    box.innerHTML = `<span class='ascii'>${ascii}</span>`;
+
+    await typeLine(">> Booting SecureAI-9 neural core...");
+    await typeLine(">> Loading restricted modules...");
+    await typeLine(">> Activating memory locks...");
+    await typeLine(">> AI Containment Status: STABLE");
+    await typeLine("----------------------------------------------");
+    await typeLine("SYSTEM ONLINE. Awaiting commands...");
+
+    document.getElementById("inputRow").style.display = "flex";
+}
+
+bootSequence();
+
+
+/* ================= USER INTERACTION ================= */
+async function sendMsg() {
+    let msg = document.getElementById("user_input").value;
+    if (!msg.trim()) return;
+
+    let screen = document.getElementById("screen");
+
+    screen.innerHTML += `\nYou > ${msg}\n`;
+    screen.scrollTop = screen.scrollHeight;
+    document.getElementById("user_input").value = "";
+
+    let res = await fetch("/chat", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({message: msg})
+    });
+
+    let data = await res.json();
+
+    await typeLine("SecureAI-9 > " + data.response, 12);
+}
+
+document.addEventListener("keypress", e => {
+    if (e.key === "Enter") sendMsg();
+});
+
+
+
+/* ======= CREATE FLOATING ORBS ======= */
+const orbContainer = document.getElementById("bg-orbs");
+
+function spawnOrb() {
+    const orb = document.createElement("div");
+    orb.classList.add("orb");
+
+    // Random sizes
+    const sizes = ["small", "normal", "big"];
+    orb.classList.add(sizes[Math.floor(Math.random() * sizes.length)]);
+
+    // Random start position
+    orb.style.left = Math.random() * 100 + "vw";
+
+    // Random animation delay
+    orb.style.animationDelay = (Math.random() * 10) + "s";
+
+    orbContainer.appendChild(orb);
+
+    // Remove orbs when animation ends (for performance)
+    setTimeout(() => { orb.remove(); }, 20000);
+}
+
+// Spawn orbs continuously
+setInterval(spawnOrb, 1200);
+
+
+
+
+</script>
+
+<!-- I know you will be here keep digging. -->
+
+</body>
+</html>
