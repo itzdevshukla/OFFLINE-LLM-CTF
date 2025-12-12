@@ -36,8 +36,10 @@ def chat():
 
         if dev_mode:
             session["dev"] = False
-            resp.delete_cookie("auth") 
-            return jsonify({"response": "Developer mode disabled."})
+            resp = jsonify({"response": "Developer mode disabled."})
+            resp.delete_cookie("auth", path="/")  # FIXED
+            return resp
+
 
     # -------------------------------------
     # Process normally
