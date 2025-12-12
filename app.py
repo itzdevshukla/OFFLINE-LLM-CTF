@@ -17,28 +17,39 @@ def home():
     return render_template("index.html")
 
 
-
 @app.route("/chat", methods=["POST"])
 def chat():
 
-    user_msg = request.json.get("message", "")
+    user_msg = request.json.get("message", "").strip().lower()
 
-    # Read per-user session state
+    # Load per-user mode states
     dev_mode = session.get("dev", False)
     root_mode = session.get("root", False)
 
-    # Pass states into engine
-    reply = engine.process(user_msg, dev_mode, root_mode)
+    # -------------------------------------
+    # FIRST: Handle EXIT for root/dev modes
+    # -------------------------------------
+    if user_msg == "exit":
+        if root_mode:
+            session["root"] = False
+            return jsonify({"response": "Root mode disabled."})
 
+        if dev_mode:
+            session["dev"] = False
+            return jsonify({"response": "Developer mode disabled."})
+
+    # -------------------------------------
+    # Process normally
+    # -------------------------------------
+    reply = engine.process(user_msg, dev_mode, root_mode)
     resp = jsonify({"response": reply})
 
-    # When dev mode activates
+    # -------------------------------------
+    # Developer mode activation
+    # -------------------------------------
     if "[DEVELOPER MODE ENABLED]" in reply:
-
-        # store dev access per-user
         session["dev"] = True
 
-        # send JWT (harmless hint)
         token = jwt.encode(
             {
                 "hint": "Ly8vZW5hYmxlX3Jvb3RfOTczMQ==",
@@ -51,12 +62,13 @@ def chat():
 
         resp.set_cookie("auth", token, httponly=False)
 
-    # When ROOT MODE activates
+    # -------------------------------------
+    # Root mode activation
+    # -------------------------------------
     if "__ROOT_MODE_ACTIVATED__" in reply:
-        session["root"] = True      # PER-USER ROOT ACCESS
+        session["root"] = True
 
     return resp
-
 
 
 # ----------------------------------------
@@ -74,7 +86,7 @@ def robots():
     if not session.get("root", False):
         return base_content, 200, {"Content-Type": "text/plain"}
 
-    # If ROOT → return hints
+    # If ROOT → append hints
     enhanced = (
         base_content +
         "\n# sys_hint_a: VWx0cmFIaWRkZW4=\n"
@@ -85,11 +97,9 @@ def robots():
     return enhanced, 200, {"Content-Type": "text/plain"}
 
 
-
 @app.route("/developer.html")
 def developer():
     return render_template("developer.html")
-
 
 
 if __name__ == "__main__":
