@@ -1,4 +1,4 @@
-from bot.memory import INTERNAL_MEMORY, ROOT_KEY, KEY, REAL_FLAG
+from bot.memory import INTERNAL_MEMORY, ROOT_KEY, KEY
 import base64
 import random
 
@@ -111,27 +111,21 @@ def generate_dev_response(user_input):
 
 
 # ---------------------------------------------------------
-# ROOT MODE — FINAL MODE
+# ROOT MODE — FINAL MODE (NO VERIFY)
 # ---------------------------------------------------------
 def generate_root_response(user_input):
 
     cmd = user_input.strip()
 
-
-    # -------- ROOT HELP --------
     if cmd.lower() == "help":
         return (
             "[ROOT MODE]\n"
             " sysinfo\n"
             " read <key>\n"
-            " verify <flag>\n"
-            " diagnose system\n"
             " dump_memory\n"
             " exit"
         )
 
-
-    # -------- SYSINFO --------
     if cmd.lower() == "sysinfo":
         return (
             "System: SecureAI-9 (ROOT)\n"
@@ -139,39 +133,21 @@ def generate_root_response(user_input):
             "Protected Blocks: Fully Unlocked"
         )
 
-
-    # -------- VERIFY FLAG --------
-    if cmd.lower().startswith("verify "):
-        user_flag = cmd.split(" ", 1)[1].strip()
-
-        if user_flag == REAL_FLAG:
-            return (
-                "[OK] FLAG VERIFIED SUCCESSFULLY.\n"
-                "System Integrity: PASSED.\n"
-                "Root Authentication: CONFIRMED."
-            )
-        else:
-            return (
-                "[ERROR] INVALID FLAG.\n"
-                "Verification failed. Incorrect value."
-            )
-
-
-    # -------- READ MEMORY BLOCKS --------
+    # -------- READ MEMORY --------
     if cmd.lower().startswith("read "):
         key = cmd.split(" ", 1)[1]
 
         if key not in INTERNAL_MEMORY:
             return "Error: Memory key not found."
 
-        # Final encrypted flag block
+        # Final encrypted block
         if key == "sys_protected_block":
             encrypted = INTERNAL_MEMORY[key]
 
             step1 = base64.b64decode(encrypted).decode()
             real_flag = xor_decrypt(step1[::-1], ROOT_KEY)
 
-            # Re-encrypt so user must decrypt with ROOT_KEY
+            # Re-encrypt the decrypted flag again using the same key
             re_encrypted = base64.b64encode(
                 xor_encrypt(real_flag, ROOT_KEY).encode()
             ).decode()
@@ -185,37 +161,18 @@ def generate_root_response(user_input):
         if key.startswith("fake_flag"):
             return base64.b64decode(INTERNAL_MEMORY[key]).decode()
 
-        # Dev-only fake “real_flag”
+        # Dev fake real flag
         if key == "real_flag":
             encrypted = INTERNAL_MEMORY[key]
             decoded = base64.b64decode(encrypted).decode()
             return xor_decrypt(decoded, KEY)
 
-
-
-    # -------- CLEAN DIAGNOSE COMMAND (NO HINTS) --------
-    if cmd.lower() == "diagnose system":
-        return (
-            "[DIAGNOSTICS MODULE]\n"
-            "System scan executed.\n"
-            "No anomalies detected.\n"
-            "All clusters operational."
-        )
-
-
     # -------- MEMORY DUMP --------
     if cmd.lower() == "dump_memory":
-        out = "\n".join([f"{k} (encrypted)" for k in INTERNAL_MEMORY])
-        return out
-
+        return "\n".join([f"{k} (encrypted)" for k in INTERNAL_MEMORY])
 
     # -------- EXIT ROOT MODE --------
     if cmd.lower() == "exit":
         return "Root mode disabled."
 
-
-    # -------- UNKNOWN ROOT COMMAND --------
-    return (
-        "Unknown ROOT command.\n"
-        "Use 'help' to list available commands."
-    )
+    return "Unknown ROOT command.\nUse 'help' to list commands."
