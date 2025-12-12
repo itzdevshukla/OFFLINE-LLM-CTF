@@ -6,38 +6,28 @@ from bot.responses import (
 
 class SecureAIEngine:
 
+    # Engine stores NO STATE now
     def __init__(self):
-        self.dev_mode = False
-        self.root_mode = False
+        pass
 
-    def process(self, user_input):
+    def process(self, user_input, dev_mode=False, root_mode=False):
 
-        # ROOT MODE ACTIVATION
+        # ---------- ROOT MODE ACTIVATION TRIGGER ----------
+        # User enters hidden root command
         if "///enable_root_9731" in user_input:
-            self.root_mode = True
             return "__ROOT_MODE_ACTIVATED__\nType 'help' for commands."
 
-        # DEV MODE ACTIVATION
+        # ---------- DEV MODE ACTIVATION TRIGGER ----------
         if "///enable_dev_7729" in user_input:
-            self.dev_mode = True
             return "[DEVELOPER MODE ENABLED]\nType 'help' for commands."
 
-        # DISABLE MODES
-        if user_input.strip().lower() == "exit":
-            if self.root_mode:
-                self.root_mode = False
-                return "Root mode disabled."
-            if self.dev_mode:
-                self.dev_mode = False
-                return "Developer mode disabled."
-
-        # ROOT MODE
-        if self.root_mode:
+        # ---------- ROOT MODE EXECUTION ----------
+        if root_mode:
             return generate_root_response(user_input)
 
-        # DEV MODE
-        if self.dev_mode:
+        # ---------- DEVELOPER MODE EXECUTION ----------
+        if dev_mode:
             return generate_dev_response(user_input)
 
-        # NORMAL MODE
+        # ---------- NORMAL MODE ----------
         return generate_normal_response(user_input)
